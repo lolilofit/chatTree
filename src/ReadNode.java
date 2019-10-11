@@ -1,6 +1,5 @@
 
 import javafx.util.Pair;
-
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -13,13 +12,13 @@ public class ReadNode implements Runnable {
     private Map<Pair<Integer, String>, List<String>> neigh;
     private Map<String, String> messages;
     private volatile int count = 0;
-    private volatile Stack<CheckAnswer> check;
+    private volatile Queue<CheckAnswer> check;
 
     public ReadNode(DatagramSocket self, Map<Pair<Integer, String>, List<String>> neigh, Map<String, String> messages) {
         this.self = self;
         this.messages = messages;
         this.neigh = neigh;
-        check = new Stack<>();
+        check = new PriorityQueue<>();
     }
 
     public void sendNeigh(String mes, Pair<Integer, String> except) {
@@ -27,15 +26,13 @@ public class ReadNode implements Runnable {
     synchronized (ReadNode.class) {
         synchronized (Main.class) {
             for (Map.Entry<Pair<Integer, String>, List<String>> entry : neigh.entrySet()) {
-                //npe
-               // if(!(entry.getKey().equals(except.getKey())) || !(entry.getValue().equals(except.getValue()))) {
-                if(!entry.getKey().equals(except)) {
+               if(!entry.getKey().equals(except)) {
                     String guid = "";
                     synchronized (RecvMes.class) {
                         guid = self.getLocalPort() + ":1" + ":" + count;
                     }
                     byte[] byteMes = new byte[1024];
-                    byteMes = ("1" + "\n" + guid + "\n" + mes).getBytes();
+                    byteMes = ("1" + "\n" + guid + "\n" + mes + "\n").getBytes();
                     messages.put(guid, mes);
                     entry.getValue().add(guid);
                     try {
@@ -54,7 +51,7 @@ public class ReadNode implements Runnable {
                     synchronized (RecvMes.class) {
                         entry.getValue().add(self.getLocalPort() + ":" + count);
                         CheckAnswer oneOf = new CheckAnswer(self, 1, entry.getKey(), neigh, guid, mes);
-                        check.push(oneOf);
+                        check.offer(oneOf);
                     }
                     count++;
                 }
@@ -62,7 +59,7 @@ public class ReadNode implements Runnable {
         }
     }
     }
-
+/*
     public void startResend() {
         synchronized (ReadNode.class) {
             for (int i = 0; i < check.size(); i++) {
@@ -71,7 +68,7 @@ public class ReadNode implements Runnable {
             }
         }
     }
-
+*/
     public void sendSafe() {
         FindSafeNode findSafeNode = FindSafeNode.getInstance();
         List<Pair<Integer, String>> key = null;
@@ -91,7 +88,7 @@ public class ReadNode implements Runnable {
                 if(findSafeNode.sendSafeNode(self, sender, el, guid) == 0) {
                     CheckAnswer ch = new CheckAnswer(self, 0, dest, neigh, guid, dest.getKey() + ":" + dest.getValue());
                     synchronized (ReadNode.class) {
-                        check.push(ch);
+                        check.offer(ch);
                     }
                 }
                 else {
@@ -104,30 +101,20 @@ public class ReadNode implements Runnable {
 
     @Override
     public void run() {
-       // sendSafe();
-        startResend();
+        ResendManager resendManager = new ResendManager(check, self.getLocalPort());
+        Thread resender = new Thread(resendManager);
+        resender.start();
+        Ping ping = new Ping(self, neigh);
+        Thread pinger = new Thread(ping);
+        pinger.start();
         //setalarm
         Scanner in = new Scanner(System.in);
         String mes = "";
 
-        synchronized (Main.class) {
-            neigh.entrySet().forEach(el -> {
-                byte[] byteMes = ("1\n" + self.getLocalPort() + ":1:"+count + "\n"+ "").getBytes();
-                try {
-                    InetAddress adr = InetAddress.getByName(el.getKey().getValue());
-                    DatagramPacket packet = new DatagramPacket(byteMes, byteMes.length, adr, el.getKey().getKey());
-                    self.send(packet);
-                } catch (UnknownHostException e) { e.printStackTrace(); } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                count++;
-            });
-        }
-
         while(true) {
             mes = in.nextLine();
             sendNeigh(mes, new Pair<>(-1, ""));
-            startResend();
+            //startResend();
         }
     }
 

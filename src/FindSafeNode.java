@@ -25,6 +25,16 @@ public class FindSafeNode {
         return instance;
     }
 
+    public void checkSafery(Pair<Integer, String> poisonedSafe) {
+        synchronized (FindSafeNode.class) {
+            List<Pair<Integer, String>> keys = new ArrayList<>(recvedSafe.keySet());
+            for(int i = 0; i < keys.size(); i++) {
+                if(recvedSafe.get(keys.get(i)).equals(poisonedSafe))
+                    recvedSafe.remove(keys.get(i));
+            }
+        }
+    }
+
     public void removeSafeNode(Pair<Integer, String> key) {
         recvedSafe.remove(key);
     }
@@ -69,7 +79,7 @@ public class FindSafeNode {
             return 1;
         if(safeOne.equals(dest))
             return 1;
-        byte[] byteMes = ("0\n" + guid + "\n" + safeOne.getKey() + ":" + safeOne.getValue()).getBytes();
+        byte[] byteMes = ("0\n" + guid + "\n" + safeOne.getKey() + ":" + safeOne.getValue() + "\n").getBytes();
         try {
             InetAddress adr = InetAddress.getByName(dest.getValue());
             DatagramPacket packet = new DatagramPacket(byteMes, byteMes.length, adr, dest.getKey());

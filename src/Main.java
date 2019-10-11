@@ -10,11 +10,14 @@ public class Main {
             System.out.println("enter ip and port as args");
             return;
         }
-        String ip = argv[1];
-        Integer port = Integer.parseInt(argv[2]);
+        Sting name = argv[1];
+        Integer loss = Integer.parseInt(argv[2].replace("%", ""));
+        Integer port = Integer.parseInt(argv[3]);
+
 */
         Scanner in = new Scanner(System.in);
         String ip = "127.0.0.1";
+        Integer loss = Integer.valueOf(in.nextLine());
         Integer port = Integer.valueOf(in.nextLine());
         String connectToIp = in.nextLine();
         Integer connectToPort = Integer.valueOf(in.nextLine());
@@ -39,7 +42,7 @@ public class Main {
         Map<String, String> messages = new HashMap<>();
 
         ReadNode readNode = new ReadNode(self, neigh, messages);
-        RecvMes recvMes = new RecvMes(readNode, self, neigh, mesAnswerCount, messages);
+        RecvMes recvMes = new RecvMes(loss, readNode, self, neigh, messages);
 
         Thread thread = new Thread(readNode);
         thread.start();
