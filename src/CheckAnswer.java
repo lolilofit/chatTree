@@ -86,7 +86,6 @@ public class CheckAnswer implements Comparable<CheckAnswer> {
 
     public int resend() {
 
-//        while(true) {
         synchronized (Main.class) {
             List<String> nullCh = neigh.get(checkFrom);
             if (nullCh != null) {
@@ -99,9 +98,8 @@ public class CheckAnswer implements Comparable<CheckAnswer> {
                             synchronized (RecvMes.class) {
                                 self.send(packet);
                             }
-                            System.out.println("resended : " + guid + " :  " + mes);
+                       //     System.out.println("resended : " + guid + " :  " + mes);
                         } catch (UnknownHostException e) {
-                            //do smth
                             e.printStackTrace();
                         } catch (IOException e) {
                             e.printStackTrace();

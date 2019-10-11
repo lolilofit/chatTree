@@ -23,52 +23,46 @@ public class ReadNode implements Runnable {
 
     public void sendNeigh(String mes, Pair<Integer, String> except) {
 
-    synchronized (ReadNode.class) {
-        synchronized (Main.class) {
-            for (Map.Entry<Pair<Integer, String>, List<String>> entry : neigh.entrySet()) {
-               if(!entry.getKey().equals(except)) {
-                    String guid = "";
-                    synchronized (RecvMes.class) {
-                        guid = self.getLocalPort() + ":1" + ":" + count;
-                    }
-                    byte[] byteMes = new byte[1024];
-                    byteMes = ("1" + "\n" + guid + "\n" + mes + "\n").getBytes();
-                    messages.put(guid, mes);
-                    entry.getValue().add(guid);
-                    try {
-                        InetAddress adr = InetAddress.getByName(entry.getKey().getValue());
-                        DatagramPacket packet = new DatagramPacket(byteMes, byteMes.length, adr, entry.getKey().getKey());
-                        //синхронизация на всех send
-                        synchronized (RecvMes.class) {
-                            self.send(packet);
+            synchronized (ReadNode.class) {
+                synchronized (Main.class) {
+                    for (Map.Entry<Pair<Integer, String>, List<String>> entry : neigh.entrySet()) {
+                       if(!entry.getKey().equals(except)) {
+                            String guid = "";
+                            synchronized (RecvMes.class) {
+                                guid = self.getLocalPort() + ":1" + ":" + count;
+                            }
+                            byte[] byteMes = new byte[1024];
+                            byteMes = ("1" + "\n" + guid + "\n" + mes + "\n").getBytes();
+                            messages.put(guid, mes);
+                            entry.getValue().add(guid);
+                            try {
+                                InetAddress adr = InetAddress.getByName(entry.getKey().getValue());
+                                DatagramPacket packet = new DatagramPacket(byteMes, byteMes.length, adr, entry.getKey().getKey());
+                                //синхронизация на всех send
+                                synchronized (RecvMes.class) {
+                                    self.send(packet);
+                                }
+                                System.out.println("sended : " + guid);
+                            } catch (UnknownHostException e) {
+                                e.printStackTrace();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            synchronized (RecvMes.class) {
+                                entry.getValue().add(self.getLocalPort() + ":" + count);
+                                CheckAnswer oneOf = new CheckAnswer(self, 1, entry.getKey(), neigh, guid, mes);
+                                synchronized (CheckAnswer.class) {
+                                    check.offer(oneOf);
+                                }
+                            }
+                            count++;
                         }
-                        System.out.println("sended : " + guid);
-                    } catch (UnknownHostException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
                     }
-                    synchronized (RecvMes.class) {
-                        entry.getValue().add(self.getLocalPort() + ":" + count);
-                        CheckAnswer oneOf = new CheckAnswer(self, 1, entry.getKey(), neigh, guid, mes);
-                        check.offer(oneOf);
-                    }
-                    count++;
                 }
             }
-        }
     }
-    }
-/*
-    public void startResend() {
-        synchronized (ReadNode.class) {
-            for (int i = 0; i < check.size(); i++) {
-                Thread resend = new Thread(check.pop());
-                resend.start();
-            }
-        }
-    }
-*/
+
+
     public void sendSafe() {
         FindSafeNode findSafeNode = FindSafeNode.getInstance();
         List<Pair<Integer, String>> key = null;
@@ -87,7 +81,7 @@ public class ReadNode implements Runnable {
 
                 if(findSafeNode.sendSafeNode(self, sender, el, guid) == 0) {
                     CheckAnswer ch = new CheckAnswer(self, 0, dest, neigh, guid, dest.getKey() + ":" + dest.getValue());
-                    synchronized (ReadNode.class) {
+                    synchronized (CheckAnswer.class) {
                         check.offer(ch);
                     }
                 }
@@ -101,20 +95,19 @@ public class ReadNode implements Runnable {
 
     @Override
     public void run() {
-        ResendManager resendManager = new ResendManager(check, self.getLocalPort());
+        ResendManager resendManager = new ResendManager(check);
         Thread resender = new Thread(resendManager);
         resender.start();
         Ping ping = new Ping(self, neigh);
         Thread pinger = new Thread(ping);
         pinger.start();
-        //setalarm
+
         Scanner in = new Scanner(System.in);
         String mes = "";
 
         while(true) {
             mes = in.nextLine();
             sendNeigh(mes, new Pair<>(-1, ""));
-            //startResend();
         }
     }
 

@@ -4,21 +4,18 @@ import java.util.Queue;
 
 public class ResendManager implements Runnable{
     private volatile Queue<CheckAnswer> check;
-    private List<CheckAnswer> pending;
 
-    int port;
-    public ResendManager(Queue<CheckAnswer> check, int port) {
+    public ResendManager(Queue<CheckAnswer> check) {
         this.check = check;
-        this.port = port;
-        pending = new ArrayList<>();
     }
 
     @Override
     public void  run() {
+
         //copy to local list
         while (true) {
             List<CheckAnswer> localCopy = new ArrayList<>();
-            synchronized (ReadNode.class) {
+            synchronized (CheckAnswer.class) {
                 CheckAnswer elem;
                 while((elem = check.poll()) != null) {
                     localCopy.add(elem);
@@ -55,13 +52,10 @@ public class ResendManager implements Runnable{
             for(int i = 0; i < localCopy.size(); i++) {
                 int res = -1;
                 if((res = localCopy.get(i).isDead()) == 1) {
-                    synchronized (ReadNode.class) {
+                    synchronized (CheckAnswer.class) {
                             check.offer(localCopy.get(i));
                     }
                 }
-              //  if(res == 2) {
-              //      pending.add(localCopy.get(i));
-              //  }
             }
         }
     }

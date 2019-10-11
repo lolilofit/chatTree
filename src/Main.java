@@ -6,7 +6,7 @@ import java.util.*;
 public class Main {
     public static void main(String[] argv) throws SocketException, UnknownHostException {
 /*
-        if(argv.length < 3) {
+        if(argv.length < 4) {
             System.out.println("enter ip and port as args");
             return;
         }
@@ -23,17 +23,16 @@ public class Main {
         Integer connectToPort = Integer.valueOf(in.nextLine());
 
         /*
-        if(argv.length == 5) {
-            connectToIp = argv[3];
-            connectToPort = Integer.parseInt(argv[4]);
+        if(argv.length == 6) {
+            connectToIp = argv[4];
+            connectToPort = Integer.parseInt(argv[5]);
         }
         */
         InetAddress adr =  InetAddress.getByName(ip);
         DatagramSocket self = new DatagramSocket(null);
-        InetSocketAddress address = new InetSocketAddress("127.0.0.1", port);
+        InetSocketAddress address = new InetSocketAddress(ip, port);
         self.bind(address);
 
-        //self.setSoTimeout(15000);
         Map<Pair<Integer, String>, List<String>> neigh = new HashMap<>();
         if(!connectToIp.equals(""))
             neigh.put(new Pair<>(connectToPort, connectToIp), new ArrayList<>());
