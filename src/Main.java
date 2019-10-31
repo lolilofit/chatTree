@@ -37,7 +37,6 @@ public class Main {
         if(!connectToIp.equals(""))
             neigh.put(new Pair<>(connectToPort, connectToIp), new ArrayList<>());
 
-        Map<String, Integer> mesAnswerCount = new HashMap<>();
         Map<String, String> messages = new HashMap<>();
 
         ReadNode readNode = new ReadNode(self, neigh, messages);

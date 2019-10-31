@@ -43,8 +43,7 @@ public class CheckAnswer implements Comparable<CheckAnswer> {
             List<String> nullCheck = neigh.get(checkFrom);
             if (nullCheck != null) {
                 if (nullCheck.contains(guid)) {
-                    if (self.getLocalPort() == 8083)
-                        System.out.println("dead" + checkFrom.getKey() + " guid: " + guid);
+                   //     System.out.println("dead" + checkFrom.getKey() + " guid: " + guid);
                     neigh.remove(checkFrom);
                     Pair<Integer, String> selfPair = new Pair<>(self.getLocalPort(), "127.0.0.1");
                     Pair<Integer, String> currentSafe = findSafeNode.getSafeNode(checkFrom);

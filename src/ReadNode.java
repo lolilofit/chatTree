@@ -1,11 +1,10 @@
-
 import javafx.util.Pair;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.*;
+
 
 public class ReadNode implements Runnable {
     private DatagramSocket self;
@@ -23,7 +22,6 @@ public class ReadNode implements Runnable {
 
     public void sendNeigh(String mes, Pair<Integer, String> except) {
 
-            synchronized (ReadNode.class) {
                 synchronized (Main.class) {
                     for (Map.Entry<Pair<Integer, String>, List<String>> entry : neigh.entrySet()) {
                        if(!entry.getKey().equals(except)) {
@@ -43,12 +41,11 @@ public class ReadNode implements Runnable {
                                     self.send(packet);
                                 }
                                 System.out.println("sended : " + guid);
-                            } catch (UnknownHostException e) {
-                                e.printStackTrace();
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
-                            synchronized (RecvMes.class) {
+
+                           synchronized (RecvMes.class) {
                                 entry.getValue().add(self.getLocalPort() + ":" + count);
                                 CheckAnswer oneOf = new CheckAnswer(self, 1, entry.getKey(), neigh, guid, mes);
                                 synchronized (CheckAnswer.class) {
@@ -59,7 +56,6 @@ public class ReadNode implements Runnable {
                         }
                     }
                 }
-            }
     }
 
 
